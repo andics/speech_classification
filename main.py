@@ -62,17 +62,17 @@ def collate_batch(batch):
     # Process features within a batch.
     """Collate a batch of data."""
     mel, speaker = zip(*batch)
-    # Because we train the model batch by batch, we need to pad the features in the same batch to make their lengths the same.
-    mel = pad_sequence(mel, batch_first=True, padding_value=-20)  # pad log 10^(-20) which is a very small value.
 
-    # Pad speaker tensor to match the length of the longest sequence
-    max_length = max([seq.shape[0] for seq in mel])
-    speaker = [torch.cat([s, torch.zeros(max_length - s.shape[0])]) for s in speaker]
+    # find the shortest feature length
+    min_len = min([m.shape[0] for m in mel])
 
+    # cut all the features to shortest length
+    mel = [m[:min_len, :] for m in mel]
+    
+    # As now all mels are of same size, we can stack them to make a tensor
     mel = torch.stack(mel)
-    speaker = torch.stack(speaker)
 
-    return mel, speaker
+    return mel, torch.stack(speaker)
 
 
 def get_dataloader(data_dir, batch_size, n_workers):
